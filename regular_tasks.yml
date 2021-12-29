@@ -1,0 +1,11 @@
+---
+- name: task 7
+  hosts: proxy
+  become: yes
+
+  tasks:
+    - name: create a cron job with a fancy name on proxy hosts
+      cron:
+        name: "{{ 'proxy: append date to time.log' | hash('md5') }}"
+        minute: "0"
+        job: "date >> /var/log/time.log"

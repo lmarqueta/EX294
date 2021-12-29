@@ -1,0 +1,14 @@
+---
+- name: task 18
+  hosts: database
+  become: true
+
+  tasks:
+    - name: deploy server list
+      template:
+        src: server_list.j2
+        dest: /etc/server_list.txt
+        owner: automation
+        group: automation
+        mode: 0600
+        setype: net_conf_t

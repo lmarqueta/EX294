@@ -1,0 +1,24 @@
+---
+- name: task 11
+  hosts: proxy
+  become: true
+
+  vars:
+    haproxy_backend_servers:
+      - name: ansible3
+        address: 172.16.10.203:80
+      - name: ansible4
+        address: 172.16.10.204:80
+    haproxy_backend_balance_method: 'roundrobin'
+    haproxy_backend_mode: 'http'
+
+  roles:
+    - geerlingguy.haproxy
+  
+  tasks:
+    - name: enable http traffic to proxy
+      firewalld:
+        service: http
+        state: enabled
+        immediate: true
+        permanent: true

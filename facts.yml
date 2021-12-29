@@ -1,0 +1,20 @@
+---
+- name: task 15
+  hosts: database
+  become: true
+
+  tasks:
+    - name: ensure facts directory exists
+      file:
+        path: /etc/ansible/facts.d
+        state: directory
+        recurse: true
+
+    - name: create custom fact
+      copy:
+        content: "[sample_exam]\nserver_role = mysql\n"
+        dest: /etc/ansible/facts.d/custom.fact
+
+    - name: test
+      debug:
+        msg: "{{ ansible_local }}"

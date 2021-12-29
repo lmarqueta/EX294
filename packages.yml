@@ -1,0 +1,25 @@
+---
+- name: task 16
+  hosts: all
+  become: true
+
+  tasks:
+    - name: install software in proxy group
+      yum:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - tcpdump
+        - mailx
+      when:
+        - inventory_hostname in groups['proxy']
+
+    - name: install software in database group
+      yum:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - lsof
+        - mailx
+      when:
+        - inventory_hostname in groups['database']

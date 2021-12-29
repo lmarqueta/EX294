@@ -1,0 +1,84 @@
+---
+# tasks file for sample-mysql
+
+- name: create primary partition 
+  parted:
+    device: /dev/nvme0n2
+    number: 1
+    flags: [ lvm ]
+    state: present
+    part_end: 800MB
+
+- name: create VG vg_database using the primary partition created above
+  lvg:
+    vg: vg_database
+    pvs: /dev/nvme0n2p1
+
+- name: create LV lv_mysql size 512MB in the VG vg_database
+  lvol:
+    vg: vg_database
+    lv: lv_mysql
+    size: 512m
+
+- name: create an XFS filesystem on lv_mysql
+  filesystem:
+    fstype: xfs
+    dev: /dev/vg_database/lv_mysql
+
+- name: ensure mount point /mnt/mysql_backups exists
+  file:
+    path: /mnt/mysql_backups
+    state: directory
+    owner: root
+    group: root
+    mode: 775
+
+- name: permanently mount filesytem
+  mount:
+    path: /mnt/mysql_backups
+    src: /dev/vg_database/lv_mysql
+    fstype: xfs
+    state: mounted
+
+- name: install mysql-server
+  yum:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - mysql-server
+    - mysql
+    - python3-PyMySQL
+
+- name: allow mysql traffic
+  firewalld:
+    service: mysql
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: start and enable mysql
+  service:
+    name: mysqld
+    state: started
+    enabled: true
+
+- name: configure root user
+  mysql_user:
+    check_implicit_admin: true
+    login_host: localhost
+    login_user: root
+    login_password: ''
+    name: root
+    password: "{{ database_password }}"
+    state: present
+    update_password: always
+  # no_log: true
+  tags: credentials
+
+- name: deploy configuration
+  template:
+    src: mysql.j2
+    dest: /etc/my.cnf
+    owner: root
+    group: root
+    mode: 644

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# create user automation
+ansible all -u root --ask-pass -m user -a "name=automation state=present" 
+
+# create .ssh directory
+ansible all -u root --ask-pass -m file -a "path=/home/automation/.ssh state=directory owner=automation group=automation mode=0700" 
+
+# copy id_rsa.pub
+ansible all -u root --ask-pass -m copy -a "src=/home/automation/.ssh/id_rsa.pub dest=/home/automation/.ssh/authorized_keys owner=automation group=automation mode=0600" 
+
+# add sudo permission
+ansible all -u root --ask-pass -m copy -a "content='automation ALL=(ALL) NOPASSWD: ALL' dest=/etc/sudoers.d/automation owner=root group=root mode=0600"

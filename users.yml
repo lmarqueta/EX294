@@ -1,0 +1,87 @@
+---
+- name: task 6
+  hosts: all
+  become: yes
+
+  vars_files:
+    - ./vars/user_list.yml
+    - ./secret.yml
+
+  tasks:
+    - name: ensure group wheel exists
+      group:
+        name: wheel
+        state: present
+
+    - name: create users in webservers group
+      loop: "{{ users }}"
+      user:
+        name: "{{ item.username }}"
+        password: "{{ user_password | password_hash('sha512')}}"
+        update_password: on_create
+        groups: wheel
+        shell: /bin/bash
+      when:
+        - inventory_hostname in groups['webservers']
+        - item.uid | string | first == "1"
+
+    - name: create users in database group
+      loop: "{{ users }}"
+      user:
+        name: "{{ item.username }}"
+        password: "{{ user_password | password_hash('sha512')}}"
+        update_password: on_create
+        groups: wheel
+        shell: /bin/bash
+      when:
+        - inventory_hostname in groups['database']
+        - item.uid | string | first == "2"
+
+    - name: create .ssh directory (webservers)
+      loop: "{{ users }}"
+      file:
+        name: "/home/{{ item.username }}/.ssh"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: 0700
+      when:
+        - inventory_hostname in groups['webservers']
+        - item.uid | string | first == "1"
+
+    - name: create .ssh directory (database)
+      loop: "{{ users }}"
+      file:
+        name: "/home/{{ item.username }}/.ssh"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: 0700
+      when:
+        - inventory_hostname in groups['database']
+        - item.uid | string | first == "2"
+
+    - name: copy ssh authorized key (webservers)
+      loop: "{{ users }}"
+      copy:
+        src: "/home/automation/.ssh/id_rsa.pub"
+        dest: "/home/{{ item.username }}/.ssh/authorized_keys"
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: 0600
+      when:
+        - inventory_hostname in groups['webservers'] 
+        - item.uid|string|first == "1"
+
+    - name: copy ssh authorized key (database)
+      loop: "{{ users }}"
+      copy:
+        src: "/home/automation/.ssh/id_rsa.pub"
+        dest: "/home/{{ item.username }}/.ssh/authorized_keys"
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: 0600
+      when:
+        - inventory_hostname in groups['database'] 
+        - item.uid|string|first == "2"
+      

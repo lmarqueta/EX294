@@ -1,0 +1,13 @@
+---
+- name: task 12
+  hosts: webservers
+  become: true
+
+  vars:
+    - selinux_booleans:
+      - name: httpd_can_network_connect
+        state: on
+        persistent: true
+
+  roles:
+    - rhel-system-roles.selinux
